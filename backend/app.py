@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from services.stock_service import get_stock_data
-from services.llm_service import analyze_stock, LLMServiceError
+from services.llm_service import analyze_stock, LLMServiceError, _create_client
 from services.db_service import save_analysis, get_analysis_records
 
 app = FastAPI(title="Stock AI Analyzer", version="1.0.0")
@@ -78,6 +78,52 @@ def analyze_stock_data(req: AnalyzeRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"分析失败: {str(e)}")
+
+
+@app.get("/api/debug/llm")
+def debug_llm():
+    """测试LLM API连通性"""
+    import httpx
+    from config import LLM_API_KEY, LLM_API_BASE, LLM_MODEL
+
+    if not LLM_API_KEY:
+        return {"status": "error", "message": "LLM_API_KEY 未配置"}
+
+    # 测试1: 网络连通性
+    try:
+        r = httpx.get(LLM_API_BASE.replace("/v4", ""), timeout=10)
+        reachable = True
+        status_code = r.status_code
+    except Exception as e:
+        reachable = False
+        status_code = None
+        net_error = str(e)
+
+    # 测试2: 最小API调用
+    try:
+        client = _create_client()
+        resp = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[{"role": "user", "content": "hi"}],
+            max_tokens=5,
+            timeout=15.0,
+        )
+        api_ok = True
+        api_response = resp.choices[0].message.content
+    except Exception as e:
+        api_ok = False
+        api_response = None
+        api_error = f"{type(e).__name__}: {e}"
+
+    result = {
+        "api_base": LLM_API_BASE,
+        "model": LLM_MODEL,
+        "key_set": bool(LLM_API_KEY),
+        "key_prefix": LLM_API_KEY[:8] + "..." if LLM_API_KEY else None,
+        "network": {"reachable": reachable, "status_code": status_code} if reachable else {"reachable": reachable, "error": net_error},
+        "api_call": {"ok": True, "response": api_response} if api_ok else {"ok": False, "error": api_error},
+    }
+    return result
 
 
 @app.get("/api/records")
