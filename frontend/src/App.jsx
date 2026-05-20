@@ -66,7 +66,7 @@ export default function App() {
     setError('')
     try {
       const res = await analyzeStock(symbol, stockData)
-      setAnalysis(res.data.analysis)
+      setAnalysis(res.data?.analysis)
     } catch (err) {
       setError(err.message)
     } finally {

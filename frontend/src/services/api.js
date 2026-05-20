@@ -21,17 +21,24 @@ export async function analyzeStock(symbol, stockData = null) {
     const err = await submitRes.json()
     throw new Error(err.detail || '分析失败')
   }
-  const { task_id } = await submitRes.json()
+  const submitData = await submitRes.json()
 
-  // 轮询结果
+  // 兼容：如果后端直接返回了 data（同步模式）
+  if (submitData.data) {
+    return submitData
+  }
+
+  // 异步模式：轮询结果
+  const taskId = submitData.task_id
   const POLL_INTERVAL = 2000
   const MAX_POLLS = 60
   for (let i = 0; i < MAX_POLLS; i++) {
     await new Promise(r => setTimeout(r, POLL_INTERVAL))
-    const pollRes = await fetch(`${API_BASE}/task/${task_id}`)
+    const pollRes = await fetch(`${API_BASE}/task/${taskId}`)
+    if (!pollRes.ok) continue
     const result = await pollRes.json()
-    if (result.status === 'done') {
-      return { data: result.data }
+    if (result.status === 'done' && result.data) {
+      return { success: true, data: result.data }
     }
     if (result.status === 'error') {
       throw new Error(result.error || '分析失败')
