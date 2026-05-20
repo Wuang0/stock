@@ -21,7 +21,7 @@ services:
         sync: false
 
   # 前端 — Static Site
-  - type: static
+  - type: static_site
     name: stock-ai-frontend
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -31,7 +31,7 @@ services:
         value: https://stock-ai-backend.onrender.com/api
 
   # 展示页 — Static Site
-  - type: static
+  - type: static_site
     name: stock-ai-showcase
     rootDir: showcase
     staticPublishPath: .
