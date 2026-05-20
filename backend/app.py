@@ -1,5 +1,7 @@
 from typing import Optional
 import os
+import uuid
+import threading
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -17,10 +19,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 异步任务存储
+_tasks: dict = {}
+
 
 class AnalyzeRequest(BaseModel):
     symbol: str
     stock_data: Optional[dict] = None  # 前端传入已有的股票数据，避免重复请求
+
+
+def _run_analysis(task_id: str, symbol: str, stock_data: dict | None):
+    """后台线程执行分析"""
+    try:
+        if not stock_data:
+            stock_data = get_stock_data(symbol)
+
+        analysis = analyze_stock(stock_data)
+
+        record = None
+        try:
+            record = save_analysis(symbol, stock_data, analysis)
+        except ValueError:
+            pass
+        except Exception as e:
+            print(f"存储失败: {e}")
+
+        _tasks[task_id]["status"] = "done"
+        _tasks[task_id]["result"] = {
+            "stock_data": stock_data,
+            "analysis": analysis,
+            "record": record,
+        }
+    except Exception as e:
+        _tasks[task_id]["status"] = "error"
+        _tasks[task_id]["error"] = str(e)
 
 
 @app.get("/api/stock/{symbol}")
@@ -39,45 +71,34 @@ def fetch_stock(symbol: str):
 
 @app.post("/api/analyze")
 def analyze_stock_data(req: AnalyzeRequest):
-    """调用LLM分析股票并存储结果"""
+    """提交分析任务，立即返回task_id，后台异步执行"""
     symbol = req.symbol.strip().upper()
-    try:
-        # 优先使用前端传入的股票数据，避免重复请求akshare
-        if req.stock_data:
-            stock_data = req.stock_data
-        else:
-            stock_data = get_stock_data(symbol)
+    task_id = str(uuid.uuid4())
+    _tasks[task_id] = {"status": "pending", "symbol": symbol}
 
-        # 调用LLM分析
-        analysis = analyze_stock(stock_data)
+    thread = threading.Thread(
+        target=_run_analysis,
+        args=(task_id, symbol, req.stock_data),
+        daemon=True,
+    )
+    thread.start()
 
-        # 存储到Supabase（如果配置了的话）
-        record = None
-        try:
-            record = save_analysis(symbol, stock_data, analysis)
-        except ValueError:
-            pass
-        except Exception as e:
-            print(f"存储失败: {e}")
+    return {"success": True, "task_id": task_id}
 
-        return {
-            "success": True,
-            "data": {
-                "stock_data": stock_data,
-                "analysis": analysis,
-                "record": record,
-            },
-        }
-    except LLMServiceError as e:
-        # LLM服务异常：可重试错误返回503，不可重试错误返回500
-        status_code = 503 if e.retryable else 500
-        raise HTTPException(status_code=status_code, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except ConnectionError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"分析失败: {str(e)}")
+
+@app.get("/api/task/{task_id}")
+def get_task(task_id: str):
+    """轮询任务状态"""
+    if task_id not in _tasks:
+        raise HTTPException(status_code=404, detail="任务不存在")
+
+    task = _tasks[task_id]
+    if task["status"] == "done":
+        return {"success": True, "status": "done", "data": task["result"]}
+    elif task["status"] == "error":
+        return {"success": False, "status": "error", "error": task["error"]}
+    else:
+        return {"success": True, "status": "pending"}
 
 
 @app.get("/api/debug/llm")
