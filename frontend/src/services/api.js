@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+  || (import.meta.env.DEV ? '/api' : 'https://stock-ai-backend-2622.onrender.com/api')
 
 export async function fetchStockData(symbol) {
   const res = await fetch(`${API_BASE}/stock/${encodeURIComponent(symbol)}`)
