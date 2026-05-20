@@ -1,0 +1,15 @@
+# 依赖
+frontend/node_modules/
+frontend/dist/
+frontend/.npm_cache/
+
+backend/__pycache__/
+backend/**/__pycache__/
+
+# 环境变量
+backend/.env
+# 保留模板文件: .env.example, .env.development, .env.production, .env.test
+
+
+# IDE配置
+.vscode/
