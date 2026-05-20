@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock AI Analyzer — 项目展示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --gold: #c9a84c;
+  --gold-dim: #8a7434;
+  --gold-glow: rgba(201, 168, 76, 0.25);
+  --green: #00d26a;
+  --red: #ff2d55;
+  --orange: #ff9f0a;
+  --bg-0: #08080a;
+  --bg-1: #0e0e12;
+  --bg-2: #141418;
+  --bg-3: #1a1a20;
+  --text-1: #e8e8ec;
+  --text-2: #9a9aa6;
+  --text-3: #5c5c6a;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --sans: 'Sora', 'Noto Sans SC', system-ui, sans-serif;
+  --serif-cn: 'Noto Sans SC', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg-0);
+  color: var(--text-1);
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scanline Overlay ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-0); }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+@keyframes scanMove {
+  0% { top: -2px; }
+  100% { top: 100%; }
+}
+@keyframes borderDraw {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes typeChar {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Container ── */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 600px;
+  height: 600px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
+  animation: glowPulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(201, 168, 76, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 168, 76, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+  animation: fadeInUp 1s ease both;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 100px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+}
+.hero-badge .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: blink 2s ease-in-out infinite;
+}
+.hero h1 {
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.hero h1 .accent { color: var(--gold); }
+.hero .subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: var(--text-2);
+  font-weight: 300;
+  max-width: 520px;
+  margin: 0 auto 40px;
+}
+.hero-nav {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.hero-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.25s;
+}
+.hero-nav a:hover {
+  background: rgba(201, 168, 76, 0.1);
+  border-color: var(--gold);
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+.hero-nav a .num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* ── Section ── */
+.section {
+  padding: 100px 0;
+  position: relative;
+}
+.section + .section {
+  border-top: 1px solid rgba(201, 168, 76, 0.08);
+}
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gold-dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.section-label::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--gold-dim);
+}
+.section-title {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+.section-title .accent { color: var(--gold); }
+.section-desc {
+  font-size: 15px;
+  color: var(--text-2);
+  max-width: 640px;
+  margin-bottom: 48px;
+  line-height: 1.8;
+}
+
+/* ── Tech Stack Table ── */
+.tech-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 48px;
+}
+.tech-table tr {
+  border-bottom: 1px solid rgba(201, 168, 76, 0.06);
+  transition: background 0.2s;
+}
+.tech-table tr:hover {
+  background: rgba(201, 168, 76, 0.03);
+}
+.tech-table td {
+  padding: 16px 0;
+  vertical-align: top;
+}
+.tech-table td:first-child {
+  width: 130px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding-right: 24px;
+  white-space: nowrap;
+}
+.tech-table td:last-child {
+  font-size: 15px;
+  color: var(--text-1);
+  line-height: 1.6;
+}
+.tech-table .tag {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px 4px 2px 0;
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gold);
+}
+
+/* ── Feature Grid ── */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.feature-card {
+  padding: 24px;
+  background: var(--bg-2);
+  border: 1px solid rgba(201, 168, 76, 0.08);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+.feature-card:hover {
+  border-color: rgba(201, 168, 76, 0.2);
+  box-shadow: 0 0 30px rgba(201, 168, 76, 0.06);
+  transform: translateY(-2px);
+}
+.feature-icon {
+  font-size: 22px;
+  margin-bottom: 12px;
+  display: block;
+}
+.feature-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.feature-card p {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* ── Constraint Layers ── */
+.constraint-layers {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+.constraint-card {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+  background: var(--bg-2);
+  border: 1px solid rgba(201, 168, 76, 0.08);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+.constraint-card:hover {
+  border-color: rgba(201, 168, 76, 0.2);
+}
+.constraint-num {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 168, 76, 0.1);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+}
+.constraint-body h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.constraint-body h4 code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gold);
+  background: rgba(201, 168, 76, 0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.constraint-body p {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* ── Code Block ── */
+.code-block {
+  position: relative;
+  margin: 24px 0;
+  background: var(--bg-1);
+  border: 1px solid rgba(201, 168, 76, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.code-block::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--gold);
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.06);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.code-header .dots {
+  display: flex;
+  gap: 5px;
+}
+.code-header .dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.code-header .dots span:nth-child(1) { background: var(--red); opacity: 0.7; }
+.code-header .dots span:nth-child(2) { background: var(--orange); opacity: 0.7; }
+.code-header .dots span:nth-child(3) { background: var(--green); opacity: 0.7; }
+.code-block pre {
+  padding: 20px 20px 20px 24px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text-1);
+  tab-size: 2;
+}
+.code-block pre .comment { color: var(--text-3); }
+.code-block pre .keyword { color: var(--gold); }
+.code-block pre .string { color: var(--green); }
+.code-block pre .important { color: var(--red); font-weight: 600; }
+.code-block pre .accent-line {
+  display: inline-block;
+  background: rgba(201, 168, 76, 0.06);
+  margin: 0 -20px;
+  padding: 0 20px;
+  width: calc(100% + 40px);
+}
+
+/* ── Design Points ── */
+.design-points {
+  list-style: none;
+  margin: 32px 0;
+}
+.design-points li {
+  display: flex;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-2);
+}
+.design-points li:last-child { border-bottom: none; }
+.design-points .dp-marker {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(201, 168, 76, 0.1);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+}
+.design-points strong { color: var(--text-1); font-weight: 600; }
+
+/* ── Debug Timeline ── */
+.debug-timeline {
+  position: relative;
+  padding-left: 48px;
+  margin: 40px 0;
+}
+.debug-timeline::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--gold), var(--gold-dim), transparent);
+}
+.debug-step {
+  position: relative;
+  margin-bottom: 36px;
+}
+.debug-step:last-child { margin-bottom: 0; }
+.debug-step .step-dot {
+  position: absolute;
+  left: -48px;
+  top: 6px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bg-0);
+}
+.debug-step:nth-child(1) .step-dot { background: var(--orange); }
+.debug-step:nth-child(2) .step-dot { background: var(--gold); }
+.debug-step:nth-child(3) .step-dot { background: var(--red); }
+.debug-step:nth-child(4) .step-dot { background: var(--green); }
+.debug-step h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.debug-step p {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.7;
+}
+
+/* ── Bug Display ── */
+.bug-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(255, 45, 85, 0.06);
+  border: 1px solid rgba(255, 45, 85, 0.15);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 32px;
+}
+.bug-display .icon {
+  font-size: 16px;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* ── Error Response Block ── */
+.error-block {
+  margin: 16px 0 24px;
+  padding: 16px 20px;
+  background: rgba(255, 45, 85, 0.04);
+  border-left: 3px solid var(--red);
+  border-radius: 0 6px 6px 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--red);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── LLM Raw Response ── */
+.llm-raw {
+  margin: 16px 0 24px;
+  padding: 20px;
+  background: var(--bg-2);
+  border: 1px solid rgba(255, 45, 85, 0.1);
+  border-radius: 8px;
+  font-family: var(--serif-cn);
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-2);
+  position: relative;
+}
+.llm-raw .noise {
+  color: var(--red);
+  opacity: 0.8;
+}
+.llm-raw .good {
+  color: var(--green);
+  opacity: 0.7;
+}
+.llm-raw::after {
+  content: 'LLM 实际输出';
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  padding: 2px 10px;
+  background: var(--bg-2);
+  border: 1px solid rgba(255, 45, 85, 0.2);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--red);
+}
+
+/* ── Fix Summary ── */
+.fix-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+.fix-card {
+  padding: 20px;
+  background: var(--bg-2);
+  border: 1px solid rgba(0, 210, 106, 0.12);
+  border-radius: 8px;
+  text-align: center;
+}
+.fix-card .fix-num {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+.fix-card h5 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.fix-card p {
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* ── Quote ── */
+.quote-block {
+  position: relative;
+  margin: 64px 0 0;
+  padding: 36px 36px 36px 48px;
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.04), transparent);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: 10px;
+}
+.quote-block::before {
+  content: '"';
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--gold);
+  opacity: 0.3;
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+.quote-block p {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--text-1);
+}
+.quote-block .hl { color: var(--gold); font-weight: 600; }
+.quote-block .hl-green { color: var(--green); font-weight: 600; }
+.quote-block .hl-red { color: var(--red); font-weight: 600; }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 48px 0;
+  border-top: 1px solid rgba(201, 168, 76, 0.06);
+}
+.footer p {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+}
+.footer .accent { color: var(--gold); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .feature-grid { grid-template-columns: repeat(2, 1fr); }
+  .fix-summary { grid-template-columns: 1fr; }
+  .tech-table td:first-child { width: 100px; font-size: 11px; }
+  .constraint-card { flex-direction: column; gap: 12px; }
+  .hero-nav { flex-direction: column; align-items: center; }
+  .quote-block { padding: 28px 20px 28px 36px; }
+}
+@media (max-width: 480px) {
+  .feature-grid { grid-template-columns: 1fr; }
+  .tech-table td:first-child { width: 90px; }
+  .tech-table .tag { font-size: 11px; }
+  .section { padding: 64px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span class="dot"></span>STOCK AI ANALYZER</div>
+    <h1>项目<span class="accent">展示</span></h1>
+    <p class="subtitle">技术栈 · Prompt 工程 · Debug 记录</p>
+    <nav class="hero-nav">
+      <a href="#tech-stack"><span class="num">01</span> 技术栈</a>
+      <a href="#prompt"><span class="num">02</span> Prompt 工程</a>
+      <a href="#debug"><span class="num">03</span> Debug 记录</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══════════════ 01 TECH STACK ═══════════════ -->
+<section class="section" id="tech-stack">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">01 / 技术栈</div>
+      <h2 class="section-title">项目<span class="accent">技术栈</span></h2>
+      <p class="section-desc">前后端分离架构，Python 后端 + React 前端，通过智谱清言 LLM 提供智能分析能力。</p>
+    </div>
+
+    <div class="reveal">
+      <table class="tech-table">
+        <tr>
+          <td>Frontend</td>
+          <td>
+            <span class="tag">React 18</span>
+            <span class="tag">Vite 6</span>
+            <span class="tag">CSS Variables</span>
+            <span class="tag">SVG Chart</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Backend</td>
+          <td>
+            <span class="tag">FastAPI</span>
+            <span class="tag">Uvicorn</span>
+            <span class="tag">Pydantic</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Stock Data</td>
+          <td>
+            <span class="tag">baostock</span> A 股 &nbsp;·&nbsp;
+            <span class="tag">yfinance</span> 美股/港股
+          </td>
+        </tr>
+        <tr>
+          <td>AI / LLM</td>
+          <td>
+            <span class="tag">智谱清言 GLM-4.7</span>
+            <span style="color:var(--text-3); font-size:13px;">OpenAI 兼容接口</span>
+          </td>
+        </tr>
+        <tr>
+          <td>Storage</td>
+          <td>
+            <span class="tag">Supabase</span>
+            <span style="color:var(--text-3); font-size:13px;">PostgreSQL + REST API</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="reveal">
+      <div class="feature-grid">
+        <div class="feature-card">
+          <span class="feature-icon">📈</span>
+          <h4>多市场支持</h4>
+          <p>A 股、美股、港股、指数一键查询</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🤖</span>
+          <h4>AI 智能分析</h4>
+          <p>LLM 生成情绪、风险、关键因素</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <h4>实时行情</h4>
+          <p>股价、市值、PE、52 周高低</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔄</span>
+          <h4>自动刷新</h4>
+          <p>10 秒间隔倒计时自动更新</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🌓</span>
+          <h4>主题切换</h4>
+          <p>Terminal Noir 深色/浅色模式</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">💾</span>
+          <h4>历史记录</h4>
+          <p>Supabase 持久化分析记录</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 02 PROMPT ═══════════════ -->
+<section class="section" id="prompt">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">02 / Prompt 工程</div>
+      <h2 class="section-title">强制 LLM <span class="accent">只输出 JSON</span></h2>
+      <p class="section-desc">LLM 默认倾向于"说话"，会加上 <code style="color:var(--red);font-family:var(--mono);font-size:13px;">好的，以下是分析结果：</code> 或 <code style="color:var(--red);font-family:var(--mono);font-size:13px;">```json</code> 代码块等冗余文本，导致后端 <code style="color:var(--gold);font-family:var(--mono);font-size:13px;">json.loads()</code> 直接报错。本项目通过三层约束彻底解决这个问题。</p>
+    </div>
+
+    <!-- Three Layers -->
+    <div class="reveal">
+      <div class="constraint-layers">
+        <div class="constraint-card">
+          <div class="constraint-num">1</div>
+          <div class="constraint-body">
+            <h4>Prompt 规则 — <code>7 条显式约束指令</code></h4>
+            <p>从语义层禁止多余输出，用正向+反向约束锁定格式</p>
+          </div>
+        </div>
+        <div class="constraint-card">
+          <div class="constraint-num">2</div>
+          <div class="constraint-body">
+            <h4>API 参数 — <code>response_format</code></h4>
+            <p>从模型层强制 JSON 模式，推理时只走 JSON token 路径</p>
+          </div>
+        </div>
+        <div class="constraint-card">
+          <div class="constraint-num">3</div>
+          <div class="constraint-body">
+            <h4>代码兜底 — <code>.get() + JSONDecodeError</code></h4>
+            <p>解析层容错，字段缺失给默认值，非法 JSON 抛自定义异常</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt Rules Code -->
+    <div class="reveal">
+      <h3 style="font-size:16px; font-weight:600; margin-bottom:16px; color:var(--text-2);">第一层 · Prompt 规则</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          llm_service.py — prompt 规则
+        </div>
+        <pre><span class="important">【极其重要】</span>你必须严格遵守以下规则：
+<span class="keyword">1.</span> 只返回纯 JSON 文本，不要 markdown 代码块（不要 ```json）
+<span class="keyword">2.</span> 不要任何解释、前言、后缀文字
+<span class="keyword">3.</span> 不要添加 JSON 中未定义的字段
+<span class="keyword">4.</span> 确保 JSON 语法正确：字符串用双引号，末尾无多余逗号
+<span class="keyword">5.</span> sentiment 只能是 <span class="string">"Bullish"</span>、<span class="string">"Neutral"</span> 或 <span class="string">"Bearish"</span> 之一
+<span class="keyword">6.</span> risk_level 只能是 <span class="string">"Low"</span>、<span class="string">"Medium"</span> 或 <span class="string">"High"</span> 之一
+<span class="keyword">7.</span> key_factors 必须是字符串数组，恰好 3 个元素
+
+请严格按照以下JSON格式返回分析结果，不要包含任何其他文字:
+{
+  <span class="string">"summary"</span>: <span class="string">"对股票当前状况的总结分析(100-200字)"</span>,
+  <span class="string">"sentiment"</span>: <span class="string">"Bullish或Neutral或Bearish"</span>,
+  <span class="string">"risk_level"</span>: <span class="string">"Low或Medium或High"</span>,
+  <span class="string">"key_factors"</span>: [<span class="string">"关键因素1"</span>, <span class="string">"关键因素2"</span>, <span class="string">"关键因素3"</span>],
+  <span class="string">"recommendation"</span>: <span class="string">"买入/持有/卖出的建议说明"</span>
+}</pre>
+      </div>
+    </div>
+
+    <!-- Design Points -->
+    <div class="reveal">
+      <ul class="design-points">
+        <li>
+          <span class="dp-marker">!</span>
+          <div><strong>【极其重要】开头标记</strong> — 提升规则的注意力权重，LLM 对强调标记更敏感</div>
+        </li>
+        <li>
+          <span class="dp-marker">±</span>
+          <div><strong>正向 + 反向约束</strong> — 不仅说"返回 JSON"，还明确说"不要 ```json""不要前言"——只说"返回 JSON"时 LLM 仍然会用代码块包裹</div>
+        </li>
+        <li>
+          <span class="dp-marker">≡</span>
+          <div><strong>枚举值锁定</strong> — 规则 5/6 锁定字段取值范围，避免 LLM 自创 <code style="color:var(--red);font-family:var(--mono);font-size:12px;">"看涨"</code> 等非标准值</div>
+        </li>
+        <li>
+          <span class="dp-marker">#</span>
+          <div><strong>结构约束</strong> — 规则 7 限定数组恰好 3 个元素，避免返回 1 个或 10 个因素</div>
+        </li>
+        <li>
+          <span class="dp-marker">→</span>
+          <div><strong>示例模板</strong> — 末尾给出完整 JSON 骨架，LLM 做 fill-in-the-blank 比从零生成更可靠</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- API Parameter Layer -->
+    <div class="reveal">
+      <h3 style="font-size:16px; font-weight:600; margin-bottom:16px; color:var(--text-2);">第二层 · API 参数</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          llm_service.py — API 调用
+        </div>
+        <pre>response = client.chat.completions.create(
+    model=<span class="string">"glm-4.7"</span>,
+    messages=[...],
+    temperature=<span class="keyword">0.1</span>,
+    <span class="accent-line">    response_format={<span class="string">"type"</span>: <span class="string">"json_object"</span>},  <span class="comment"># 模型层面强制 JSON 模式</span></span>
+)</pre>
+      </div>
+      <p style="font-size:13px; color:var(--text-2); line-height:1.8; margin-top:12px;">
+        <code style="color:var(--gold);font-family:var(--mono);font-size:12px;">response_format={"type": "json_object"}</code> 让模型在推理时只走 JSON token 路径，配合 system message 中的"始终以严格的JSON格式返回"形成双重锁定。
+      </p>
+    </div>
+
+    <!-- Code Fallback Layer -->
+    <div class="reveal">
+      <h3 style="font-size:16px; font-weight:600; margin-bottom:16px; color:var(--text-2);">第三层 · 代码兜底</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="dots"><span></span><span></span><span></span></div>
+          llm_service.py — 解析层容错
+        </div>
+        <pre>content = response.choices[<span class="keyword">0</span>].message.content
+<span class="keyword">if not</span> content:
+    <span class="keyword">raise</span> LLMServiceError(<span class="string">"LLM返回内容为空"</span>, retryable=<span class="keyword">True</span>)
+
+result = json.loads(content)  <span class="comment"># 非法 JSON → JSONDecodeError</span>
+
+<span class="keyword">return</span> {
+    <span class="string">"summary"</span>:     result.get(<span class="string">"summary"</span>, <span class="string">"分析暂不可用"</span>),   <span class="comment"># 字段缺失时给默认值</span>
+    <span class="string">"sentiment"</span>:   result.get(<span class="string">"sentiment"</span>, <span class="string">"Neutral"</span>),
+    <span class="string">"risk_level"</span>:  result.get(<span class="string">"risk_level"</span>, <span class="string">"Medium"</span>),
+    <span class="string">"key_factors"</span>: result.get(<span class="string">"key_factors"</span>, []),
+    <span class="string">"recommendation"</span>: result.get(<span class="string">"recommendation"</span>, <span class="string">""</span>),
+}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 03 DEBUG ═══════════════ -->
+<section class="section" id="debug">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">03 / Debug 记录</div>
+      <h2 class="section-title">LLM 返回非法 JSON <span class="accent">导致 500</span></h2>
+      <p class="section-desc">一次完整的 Bug 排查过程：从前端报错到定位根因，再到三层修复。</p>
+
+      <div class="bug-display">
+        <span class="icon">⚠</span>
+        HTTP 500 Internal Server Error — /api/analyze
+      </div>
+
+      <div class="error-block">json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)</div>
+    </div>
+
+    <div class="reveal">
+      <div class="debug-timeline">
+        <div class="debug-step">
+          <div class="step-dot">1</div>
+          <h4>定位报错位置</h4>
+          <p><code style="color:var(--gold);font-family:var(--mono);font-size:12px;">json.loads()</code> 在 <code style="color:var(--text-2);font-family:var(--mono);font-size:12px;">llm_service.py:59</code> 抛出异常，说明 <code style="color:var(--text-2);font-family:var(--mono);font-size:12px;">response.choices[0].message.content</code> 不是合法 JSON。</p>
+        </div>
+
+        <div class="debug-step">
+          <div class="step-dot">2</div>
+          <h4>打印原始响应</h4>
+          <p>临时加日志查看 LLM 实际返回了什么：</p>
+          <div class="llm-raw">
+            <span class="noise">好的，以下是对该股票的分析：</span><br><br>
+            <span class="noise">```json</span><br>
+            {<br>
+            &nbsp;&nbsp;"summary": "<span class="good">贵州茅台近期表现...</span>",<br>
+            &nbsp;&nbsp;"sentiment": "<span class="good">Bullish</span>",<br>
+            &nbsp;&nbsp;...<br>
+            }<br>
+            <span class="noise">```</span><br><br>
+            <span class="noise">希望对您有所帮助！</span>
+          </div>
+          <p>发现 LLM 返回了<strong style="color:var(--red);">前言</strong> + <strong style="color:var(--red);">代码块标记</strong> + <strong style="color:var(--red);">后缀</strong>，而非纯 JSON。</p>
+        </div>
+
+        <div class="debug-step">
+          <div class="step-dot">3</div>
+          <h4>分析根因</h4>
+          <p>LLM <strong style="color:var(--red);">"说话了"</strong>——在 JSON 前加了前言和代码块标记，在 JSON 后加了后缀。这是 LLM 的默认行为倾向，<strong>单纯在 prompt 中说"返回 JSON"不够</strong>，模型仍然会加修饰文字。</p>
+        </div>
+
+        <div class="debug-step">
+          <div class="step-dot">4</div>
+          <h4>三层修复</h4>
+          <p>逐步收紧约束，从"请"到"必须"到"保险"：</p>
+          <div class="fix-summary">
+            <div class="fix-card">
+              <div class="fix-num">01</div>
+              <h5>Prompt 规则</h5>
+              <p>7 条显式约束，禁止代码块、前言、后缀，锁定枚举值</p>
+            </div>
+            <div class="fix-card">
+              <div class="fix-num">02</div>
+              <h5>API 参数</h5>
+              <p>response_format 强制 JSON token 路径</p>
+            </div>
+            <div class="fix-card">
+              <div class="fix-num">03</div>
+              <h5>代码兜底</h5>
+              <p>JSONDecodeError 捕获 + .get() 默认值</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal">
+      <div class="quote-block">
+        <p>
+          "对 LLM 说<span class="hl">请返回 JSON</span>" 和 "让 LLM <span class="hl-green">只能返回 JSON</span>" 是两回事。<br>
+          Prompt 约束是<span class="hl">"请"</span>，response_format 是<span class="hl-green">"必须"</span>，代码兜底是<span class="hl-red">"保险"</span>——三层缺一不可。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <p>STOCK AI ANALYZER · <span class="accent">TERMINAL NOIR</span></p>
+</footer>
+
+<!-- ═══════════════ SCROLL REVEAL ═══════════════ -->
+<script>
+(function() {
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach(function(el) { observer.observe(el); });
+})();
+</script>
+</body>
+</html>
