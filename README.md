@@ -2,6 +2,7 @@
 
 基于 LLM 的智能股票分析工具，支持 A 股、美股、港股行情查询与 AI 分析。
 
+##在线Web页面：https://stock-ai-frontend-k289.onrender.com/
 ## 技术栈
 
 | 层级 | 技术 |
