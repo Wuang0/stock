@@ -24,7 +24,7 @@ def _create_client() -> OpenAI:
     return OpenAI(
         api_key=LLM_API_KEY,
         base_url=LLM_API_BASE,
-        timeout=60.0,
+        timeout=120.0,
         max_retries=0,  # 由我们自己控制重试逻辑
     )
 
@@ -83,7 +83,6 @@ def analyze_stock(stock_data: dict) -> dict:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
-                max_tokens=500,
                 response_format={"type": "json_object"},
             )
 
