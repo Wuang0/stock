@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # LLM API配置
-LLM_API_KEY = os.getenv("LLM_API_KEY", "9ca27058e4154531af85bc6df94d53b3.jn8AGndH6SeavbCP")
+LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_API_BASE = os.getenv("LLM_API_BASE", "https://open.bigmodel.cn/api/paas/v4")
 LLM_MODEL = os.getenv("LLM_MODEL", "glm-4.7")
 
