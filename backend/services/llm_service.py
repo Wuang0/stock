@@ -24,7 +24,7 @@ def _create_client() -> OpenAI:
     return OpenAI(
         api_key=LLM_API_KEY,
         base_url=LLM_API_BASE,
-        timeout=30.0,
+        timeout=60.0,
         max_retries=0,  # 由我们自己控制重试逻辑
     )
 
